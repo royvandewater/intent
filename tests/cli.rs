@@ -29,9 +29,31 @@ fn run_intent_on_that_file(world: &mut CliWorld) {
     world.stdout = String::from_utf8_lossy(&output.stdout).into_owned();
 }
 
+#[when(expr = "I run intent with {string}")]
+fn run_intent_with(world: &mut CliWorld, arg: String) {
+    let output = Command::new(env!("CARGO_BIN_EXE_intent"))
+        .arg(&arg)
+        .output()
+        .unwrap();
+
+    world.success = output.status.success();
+    world.stdout = String::from_utf8_lossy(&output.stdout).into_owned();
+}
+
 #[then("it exits successfully")]
 fn it_exits_successfully(world: &mut CliWorld) {
     assert!(world.success);
+}
+
+#[then("the output describes the usage of intent")]
+fn the_output_describes_usage(world: &mut CliWorld) {
+    assert!(
+        world.stdout.contains("Usage:")
+            && world.stdout.contains("--diff")
+            && world.stdout.contains("--help"),
+        "expected usage information, got {:?}",
+        world.stdout
+    );
 }
 
 #[then("it prints:")]

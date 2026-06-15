@@ -4,16 +4,27 @@ use std::process::{Command, ExitCode};
 fn main() -> ExitCode {
     let mut args = std::env::args().skip(1);
     let Some(first) = args.next() else {
-        eprintln!("usage: intent <test-file>\n       intent --diff");
+        eprintln!("{USAGE}");
         return ExitCode::FAILURE;
     };
 
-    if first == "--diff" {
-        return run_diff();
+    match first.as_str() {
+        "--help" | "-h" => {
+            println!("{USAGE}");
+            ExitCode::SUCCESS
+        }
+        "--diff" => run_diff(),
+        _ => run_extract(&first),
     }
-
-    run_extract(&first)
 }
+
+const USAGE: &str = "\
+intent — print the intent of a test file
+
+Usage:
+  intent <test-file>    Print the describe/it/test titles in the file
+  intent --diff         Diff the intent of test files changed against main
+  intent --help         Show this help";
 
 fn run_extract(path: &str) -> ExitCode {
     let source = match std::fs::read_to_string(path) {
