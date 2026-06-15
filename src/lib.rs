@@ -23,9 +23,10 @@ fn title_of_line(line: &str) -> Option<String> {
         return None;
     }
 
-    let start = trimmed.find('\'')?;
-    let rest = &trimmed[start + 1..];
-    let end = rest.find('\'')?;
+    let start = trimmed.find(['\'', '"', '`'])?;
+    let quote = trimmed[start..].chars().next()?;
+    let rest = &trimmed[start + quote.len_utf8()..];
+    let end = rest.find(quote)?;
     Some(rest[..end].to_string())
 }
 
@@ -69,6 +70,20 @@ mod tests {
         let output = extract(source);
 
         assert_eq!(output, "Calculator\n  adds");
+    }
+
+    #[test]
+    fn double_quoted_titles_are_supported() {
+        let output = extract("it(\"adds two numbers\", () => {})");
+
+        assert_eq!(output, "adds two numbers");
+    }
+
+    #[test]
+    fn backtick_titles_are_supported() {
+        let output = extract("it(`adds two numbers`, () => {})");
+
+        assert_eq!(output, "adds two numbers");
     }
 
     #[test]
