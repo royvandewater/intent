@@ -88,8 +88,7 @@ mod tests {
 
     #[test]
     fn non_describe_or_it_lines_with_quotes_are_ignored() {
-        let source =
-            "describe('Calculator', () => {\n  it('adds', () => {\n    expect(add(1, 2)).toBe('three')\n  })\n})";
+        let source = "describe('Calculator', () => {\n  it('adds', () => {\n    expect(add(1, 2)).toBe('three')\n  })\n})";
 
         let output = extract(source);
 
