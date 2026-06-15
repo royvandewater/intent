@@ -15,11 +15,26 @@ pub fn extract(source: &str) -> String {
     lines.join("\n")
 }
 
+const BLOCK_KEYWORDS: [&str; 2] = ["describe", "it"];
+
 fn title_of_line(line: &str) -> Option<String> {
-    let start = line.find('\'')?;
-    let rest = &line[start + 1..];
+    let trimmed = line.trim_start();
+    if !starts_block(trimmed) {
+        return None;
+    }
+
+    let start = trimmed.find('\'')?;
+    let rest = &trimmed[start + 1..];
     let end = rest.find('\'')?;
     Some(rest[..end].to_string())
+}
+
+fn starts_block(trimmed: &str) -> bool {
+    BLOCK_KEYWORDS.iter().any(|keyword| {
+        trimmed
+            .strip_prefix(keyword)
+            .is_some_and(|rest| rest.starts_with('(') || rest.starts_with('.'))
+    })
 }
 
 #[cfg(test)]
@@ -50,6 +65,16 @@ mod tests {
     #[test]
     fn it_nested_in_describe_is_indented_under_it() {
         let source = "describe('Calculator', () => {\n  it('adds', () => {})\n})";
+
+        let output = extract(source);
+
+        assert_eq!(output, "Calculator\n  adds");
+    }
+
+    #[test]
+    fn non_describe_or_it_lines_with_quotes_are_ignored() {
+        let source =
+            "describe('Calculator', () => {\n  it('adds', () => {\n    expect(add(1, 2)).toBe('three')\n  })\n})";
 
         let output = extract(source);
 
