@@ -14,3 +14,8 @@ Feature: Running the intent CLI on a test file
       Calculator
         adds
       """
+
+  Scenario: Printing usage information with --help
+    When I run intent with "--help"
+    Then it exits successfully
+    And the output describes the usage of intent

@@ -91,3 +91,22 @@ Feature: Extracting intent from a test file
       Calculator
         adds
       """
+
+  Scenario: Colored output styles describe blocks and tests
+    Given the source:
+      """
+      describe('Calculator', () => {
+        it('adds', () => {})
+      })
+      """
+    When I extract the colored intent
+    Then "Calculator" is shown as a describe block
+    And "adds" is shown as a passing test
+
+  Scenario: test blocks are styled like passing tests
+    Given the source:
+      """
+      test('adds two numbers', () => {})
+      """
+    When I extract the colored intent
+    Then "adds two numbers" is shown as a passing test
