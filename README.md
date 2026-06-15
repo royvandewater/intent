@@ -41,7 +41,10 @@ Nesting is reflected by indentation.
 
 ## Development
 
-Built with strict TDD. Run the suite with:
+Built with strict TDD. The suite is written with
+[cucumber-rs](https://github.com/cucumber-rs/cucumber): Gherkin scenarios live
+in `tests/features/`, and their step definitions live in the matching
+`tests/*.rs` runners. Run the suite with:
 
 ```sh
 cargo test
