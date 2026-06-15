@@ -39,6 +39,21 @@ Recognizes `describe`, `it`, and `test` blocks (including modifiers like
 `.skip` / `.only`), with single-quoted, double-quoted, and backtick titles.
 Nesting is reflected by indentation.
 
+Output is colored when writing to a terminal — `describe` containers in bold
+and `it`/`test` leaves in green, following Cucumber's scheme. Colors are
+suppressed when the output is piped or when `NO_COLOR` is set.
+
+## Diffing against `main`
+
+```sh
+intent --diff
+```
+
+Compares every test file that changed between `main` and `HEAD` (two-dot
+`main..HEAD` — a straight tip-to-tip comparison, not against the merge base)
+and prints how each file's intent changed: titles added on this branch in
+green `+`, titles removed in red `-`, shared titles as plain context.
+
 ## Development
 
 Built with strict TDD. The suite is written with
