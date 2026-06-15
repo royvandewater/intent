@@ -16,3 +16,7 @@ harness = false
 [[test]]
 name = "cli"
 harness = false
+
+[[test]]
+name = "diff"
+harness = false

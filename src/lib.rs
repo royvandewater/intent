@@ -12,8 +12,86 @@ pub fn extract_colored(source: &str) -> String {
     })
 }
 
+/// Diffs the extracted intent of two versions of a test file. Titles present
+/// only in `new_source` are shown as additions (green `+`), titles present only
+/// in `old_source` as removals (red `-`), and shared titles as plain context.
+/// Returns an empty string when the intent is identical.
+pub fn diff_intent(old_source: &str, new_source: &str, colored: bool) -> String {
+    let old = extract(old_source);
+    let new = extract(new_source);
+    let old_lines: Vec<&str> = old.lines().collect();
+    let new_lines: Vec<&str> = new.lines().collect();
+
+    let edits = diff_lines(&old_lines, &new_lines);
+    if edits.iter().all(|(sign, _)| *sign == Sign::Context) {
+        return String::new();
+    }
+
+    edits
+        .iter()
+        .map(|(sign, line)| render_edit(*sign, line, colored))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+#[derive(Clone, Copy, PartialEq)]
+enum Sign {
+    Added,
+    Removed,
+    Context,
+}
+
+fn render_edit(sign: Sign, line: &str, colored: bool) -> String {
+    let body = match sign {
+        Sign::Added => format!("+ {line}"),
+        Sign::Removed => format!("- {line}"),
+        Sign::Context => format!("  {line}"),
+    };
+    match (colored, sign) {
+        (true, Sign::Added) => format!("{GREEN}{body}{RESET}"),
+        (true, Sign::Removed) => format!("{RED}{body}{RESET}"),
+        _ => body,
+    }
+}
+
+/// A longest-common-subsequence line diff, ordered so removals precede the
+/// additions that replace them.
+fn diff_lines<'a>(old: &[&'a str], new: &[&'a str]) -> Vec<(Sign, &'a str)> {
+    let (n, m) = (old.len(), new.len());
+    let mut lcs = vec![vec![0usize; m + 1]; n + 1];
+    for i in (0..n).rev() {
+        for j in (0..m).rev() {
+            lcs[i][j] = if old[i] == new[j] {
+                lcs[i + 1][j + 1] + 1
+            } else {
+                lcs[i + 1][j].max(lcs[i][j + 1])
+            };
+        }
+    }
+
+    let mut edits = Vec::new();
+    let (mut i, mut j) = (0, 0);
+    while i < n && j < m {
+        if old[i] == new[j] {
+            edits.push((Sign::Context, old[i]));
+            i += 1;
+            j += 1;
+        } else if lcs[i + 1][j] >= lcs[i][j + 1] {
+            edits.push((Sign::Removed, old[i]));
+            i += 1;
+        } else {
+            edits.push((Sign::Added, new[j]));
+            j += 1;
+        }
+    }
+    edits.extend(old[i..].iter().map(|line| (Sign::Removed, *line)));
+    edits.extend(new[j..].iter().map(|line| (Sign::Added, *line)));
+    edits
+}
+
 const BOLD: &str = "\x1b[1m";
 const GREEN: &str = "\x1b[32m";
+const RED: &str = "\x1b[31m";
 const RESET: &str = "\x1b[0m";
 
 #[derive(Clone, Copy)]
