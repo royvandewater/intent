@@ -15,7 +15,7 @@ pub fn extract(source: &str) -> String {
     lines.join("\n")
 }
 
-const BLOCK_KEYWORDS: [&str; 2] = ["describe", "it"];
+const BLOCK_KEYWORDS: [&str; 3] = ["describe", "it", "test"];
 
 fn title_of_line(line: &str) -> Option<String> {
     let trimmed = line.trim_start();
@@ -47,6 +47,13 @@ mod tests {
         let output = extract("");
 
         assert_eq!(output, "");
+    }
+
+    #[test]
+    fn test_block_prints_its_title() {
+        let output = extract("test('adds two numbers', () => {})");
+
+        assert_eq!(output, "adds two numbers");
     }
 
     #[test]
