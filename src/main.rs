@@ -13,7 +13,7 @@ fn main() -> ExitCode {
             println!("{USAGE}");
             ExitCode::SUCCESS
         }
-        "--diff" => run_diff(),
+        "--diff" => run_diff(&args.collect::<Vec<_>>()),
         _ => run_extract(&first),
     }
 }
@@ -23,7 +23,8 @@ intent — print the intent of a test file
 
 Usage:
   intent <test-file>    Print the describe/it/test titles in the file
-  intent --diff         Diff the intent of test files changed against main
+  intent --diff [files] Diff the intent of test files changed against main,
+                        limited to [files] when given
   intent --help         Show this help";
 
 fn run_extract(path: &str) -> ExitCode {
@@ -45,8 +46,9 @@ fn run_extract(path: &str) -> ExitCode {
 
 /// Print the intent diff for every test file that changed between `main` and
 /// `HEAD`, using two-dot semantics (`main..HEAD`): a straight tip-to-tip
-/// comparison, not against the merge base.
-fn run_diff() -> ExitCode {
+/// comparison, not against the merge base. When `filters` is non-empty, only
+/// changed files matching one of those filenames are shown.
+fn run_diff(filters: &[String]) -> ExitCode {
     let changed = match git(&["diff", "--name-only", "main", "HEAD"]) {
         Ok(output) => output,
         Err(error) => {
@@ -57,6 +59,9 @@ fn run_diff() -> ExitCode {
 
     let colored = use_color();
     for path in changed.lines() {
+        if !intent::path_matches(path, filters) {
+            continue;
+        }
         let old = git(&["show", &format!("main:{path}")]).unwrap_or_default();
         let new = git(&["show", &format!("HEAD:{path}")]).unwrap_or_default();
         let diff = intent::diff_intent(&old, &new, colored);

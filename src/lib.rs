@@ -34,6 +34,18 @@ pub fn diff_intent(old_source: &str, new_source: &str, colored: bool) -> String 
         .join("\n")
 }
 
+/// Whether a changed `path` should be shown given the filename `filters`. With
+/// no filters every path matches; otherwise a path matches when it equals a
+/// filter or ends with `/<filter>`, so a bare basename works from any directory.
+pub fn path_matches(path: &str, filters: &[String]) -> bool {
+    if filters.is_empty() {
+        return true;
+    }
+    filters
+        .iter()
+        .any(|filter| path == filter || path.ends_with(&format!("/{filter}")))
+}
+
 #[derive(Clone, Copy, PartialEq)]
 enum Sign {
     Added,
