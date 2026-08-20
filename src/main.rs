@@ -1,4 +1,5 @@
 use std::io::IsTerminal;
+use std::path::Path;
 use std::process::{Command, ExitCode};
 
 fn main() -> ExitCode {
@@ -28,7 +29,7 @@ Usage:
   intent --help         Show this help";
 
 fn run_extract(path: &str) -> ExitCode {
-    let source = match std::fs::read_to_string(path) {
+    let source = match read_source(path) {
         Ok(source) => source,
         Err(error) => {
             eprintln!("intent: cannot read {path}: {error}");
@@ -72,6 +73,22 @@ fn run_diff(filters: &[String]) -> ExitCode {
         println!("{diff}\n");
     }
     ExitCode::SUCCESS
+}
+
+/// Read `path` relative to the working directory, falling back to the same
+/// path relative to the git repository root. The working-directory error is
+/// what gets reported when neither location has the file.
+fn read_source(path: &str) -> Result<String, std::io::Error> {
+    let error = match std::fs::read_to_string(path) {
+        Ok(source) => return Ok(source),
+        Err(error) => error,
+    };
+
+    let Ok(root) = git(&["rev-parse", "--show-toplevel"]) else {
+        return Err(error);
+    };
+
+    std::fs::read_to_string(Path::new(root.trim()).join(path)).or(Err(error))
 }
 
 fn header(path: &str, colored: bool) -> String {

@@ -19,3 +19,18 @@ Feature: Running the intent CLI on a test file
     When I run intent with "--help"
     Then it exits successfully
     And the output describes the usage of intent
+
+  Scenario: Resolves a path relative to the git repo root
+    Given a git repository containing "src/calc.test.ts":
+      """
+      describe('Calculator', () => {
+        it('adds', () => {})
+      })
+      """
+    When I run intent on "src/calc.test.ts" from a subdirectory of that repository
+    Then it exits successfully
+    And it prints:
+      """
+      Calculator
+        adds
+      """

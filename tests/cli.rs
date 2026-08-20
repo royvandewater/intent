@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::process::Command;
 
 use cucumber::{World, given, then, when};
@@ -5,6 +6,7 @@ use cucumber::{World, given, then, when};
 #[derive(Debug, Default, World)]
 struct CliWorld {
     source: String,
+    repo: PathBuf,
     success: bool,
     stdout: String,
 }
@@ -25,6 +27,40 @@ fn run_intent_on_that_file(world: &mut CliWorld) {
         .unwrap();
 
     std::fs::remove_file(&path).unwrap();
+    world.success = output.status.success();
+    world.stdout = String::from_utf8_lossy(&output.stdout).into_owned();
+}
+
+#[given(expr = "a git repository containing {string}:")]
+fn a_git_repository_containing(world: &mut CliWorld, path: String, step: &cucumber::gherkin::Step) {
+    world.repo = std::env::temp_dir().join(format!("intent_cli_repo_{}", std::process::id()));
+    std::fs::remove_dir_all(&world.repo).ok();
+
+    let file = world.repo.join(&path);
+    std::fs::create_dir_all(file.parent().unwrap()).unwrap();
+    std::fs::write(&file, docstring(step)).unwrap();
+
+    let status = Command::new("git")
+        .args(["init"])
+        .current_dir(&world.repo)
+        .output()
+        .unwrap()
+        .status;
+    assert!(status.success());
+}
+
+#[when(expr = "I run intent on {string} from a subdirectory of that repository")]
+fn run_intent_from_subdirectory(world: &mut CliWorld, path: String) {
+    let subdirectory = world.repo.join("nested/deeper");
+    std::fs::create_dir_all(&subdirectory).unwrap();
+
+    let output = Command::new(env!("CARGO_BIN_EXE_intent"))
+        .arg(&path)
+        .current_dir(&subdirectory)
+        .output()
+        .unwrap();
+
+    std::fs::remove_dir_all(&world.repo).unwrap();
     world.success = output.status.success();
     world.stdout = String::from_utf8_lossy(&output.stdout).into_owned();
 }
