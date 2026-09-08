@@ -110,3 +110,14 @@ Feature: Extracting intent from a test file
       """
     When I extract the colored intent
     Then "adds two numbers" is shown as a passing test
+
+  Scenario: A unicode escape in a title prints as its character
+    Given the source:
+      """
+      it('the query\u2019s organizationId', () => {})
+      """
+    When I extract the intent
+    Then the output is:
+      """
+      the query’s organizationId
+      """
