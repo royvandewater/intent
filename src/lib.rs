@@ -157,7 +157,47 @@ fn block_of_line(line: &str) -> Option<(Block, String)> {
     let quote = trimmed[start..].chars().next()?;
     let rest = &trimmed[start + quote.len_utf8()..];
     let end = rest.find(quote)?;
-    Some((kind, rest[..end].to_string()))
+    Some((kind, unescape(&rest[..end])))
+}
+
+fn unescape(title: &str) -> String {
+    let mut out = String::new();
+    let mut chars = title.chars();
+
+    while let Some(character) = chars.next() {
+        if character != '\\' {
+            out.push(character);
+            continue;
+        }
+        match chars.next() {
+            Some('u') => out.push_str(&unescape_unicode(&mut chars)),
+            Some('n') => out.push('\n'),
+            Some('t') => out.push('\t'),
+            Some('r') => out.push('\r'),
+            Some(escaped) => out.push(escaped),
+            None => out.push('\\'),
+        }
+    }
+    out
+}
+
+fn unescape_unicode(chars: &mut std::str::Chars) -> String {
+    let braced = chars.clone().next() == Some('{');
+    let digits: String = if braced {
+        chars.next();
+        chars.take_while(|character| *character != '}').collect()
+    } else {
+        chars.take(4).collect()
+    };
+
+    match u32::from_str_radix(&digits, 16)
+        .ok()
+        .and_then(char::from_u32)
+    {
+        Some(character) => character.to_string(),
+        None if braced => format!("\\u{{{digits}}}"),
+        None => format!("\\u{digits}"),
+    }
 }
 
 fn block_kind(trimmed: &str) -> Option<Block> {
