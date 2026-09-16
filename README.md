@@ -4,6 +4,18 @@ Parses a vitest test file and prints the contents of all the `describe` & `it`
 blocks — like a Cucumber feature — so you can read the intent of every test in a
 file without the implementation.
 
+## Installation
+
+```sh
+cargo install --git https://github.com/royvandewater/intent
+```
+
+Or from a local checkout:
+
+```sh
+cargo install --path .
+```
+
 ## Usage
 
 ```sh
