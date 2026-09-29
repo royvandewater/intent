@@ -24,7 +24,7 @@ intent — print the intent of a test file
 
 Usage:
   intent <test-file>    Print the describe/it/test titles in the file
-  intent --diff [files] Diff the intent of test files changed against main,
+  intent --diff [files] Diff the intent of test files changed on this branch since main,
                         limited to [files] when given
   intent --help         Show this help";
 
@@ -45,12 +45,20 @@ fn run_extract(path: &str) -> ExitCode {
     ExitCode::SUCCESS
 }
 
-/// Print the intent diff for every test file that changed between `main` and
-/// `HEAD`, using two-dot semantics (`main..HEAD`): a straight tip-to-tip
-/// comparison, not against the merge base. When `filters` is non-empty, only
-/// changed files matching one of those filenames are shown.
+/// Print the intent diff for every test file that changed between the merge
+/// base of `main` and `HEAD`, using three-dot semantics (`main...HEAD`): only
+/// changes introduced on this branch, matching what a pull request shows.
+/// When `filters` is non-empty, only changed files matching one of those
+/// filenames are shown.
 fn run_diff(filters: &[String]) -> ExitCode {
-    let changed = match git(&["diff", "--name-only", "main", "HEAD"]) {
+    let base = match git(&["merge-base", "main", "HEAD"]) {
+        Ok(output) => output.trim().to_string(),
+        Err(error) => {
+            eprintln!("intent: {error}");
+            return ExitCode::FAILURE;
+        }
+    };
+    let changed = match git(&["diff", "--name-only", &base, "HEAD"]) {
         Ok(output) => output,
         Err(error) => {
             eprintln!("intent: {error}");
@@ -63,7 +71,7 @@ fn run_diff(filters: &[String]) -> ExitCode {
         if !intent::path_matches(path, filters) {
             continue;
         }
-        let old = git(&["show", &format!("main:{path}")]).unwrap_or_default();
+        let old = git(&["show", &format!("{base}:{path}")]).unwrap_or_default();
         let new = git(&["show", &format!("HEAD:{path}")]).unwrap_or_default();
         let diff = intent::diff_intent(&old, &new, colored);
         if diff.is_empty() {
