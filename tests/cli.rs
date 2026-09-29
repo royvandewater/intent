@@ -65,6 +65,68 @@ fn run_intent_from_subdirectory(world: &mut CliWorld, path: String) {
     world.stdout = String::from_utf8_lossy(&output.stdout).into_owned();
 }
 
+#[given(expr = "a git repository whose main branch has {string}:")]
+fn a_git_repository_whose_main_has(
+    world: &mut CliWorld,
+    path: String,
+    step: &cucumber::gherkin::Step,
+) {
+    world.repo = std::env::temp_dir().join(format!("intent_cli_diff_repo_{}", std::process::id()));
+    std::fs::remove_dir_all(&world.repo).ok();
+    std::fs::create_dir_all(&world.repo).unwrap();
+
+    git(&world.repo, &["init", "-b", "main"]);
+    git(&world.repo, &["config", "user.email", "test@example.com"]);
+    git(&world.repo, &["config", "user.name", "Test"]);
+    commit(&world.repo, &path, &docstring(step));
+}
+
+#[given(expr = "this branch changed {string} to:")]
+fn this_branch_changed(world: &mut CliWorld, path: String, step: &cucumber::gherkin::Step) {
+    git(&world.repo, &["switch", "-c", "feature"]);
+    commit(&world.repo, &path, &docstring(step));
+}
+
+#[given(expr = "main then changed {string} to:")]
+fn main_then_changed(world: &mut CliWorld, path: String, step: &cucumber::gherkin::Step) {
+    git(&world.repo, &["switch", "main"]);
+    commit(&world.repo, &path, &docstring(step));
+    git(&world.repo, &["switch", "feature"]);
+}
+
+#[when(expr = "I run intent with {string} in that repository")]
+fn run_intent_with_in_repository(world: &mut CliWorld, arg: String) {
+    let output = Command::new(env!("CARGO_BIN_EXE_intent"))
+        .arg(&arg)
+        .env("NO_COLOR", "1")
+        .current_dir(&world.repo)
+        .output()
+        .unwrap();
+
+    std::fs::remove_dir_all(&world.repo).unwrap();
+    world.success = output.status.success();
+    world.stdout = String::from_utf8_lossy(&output.stdout).into_owned();
+}
+
+fn git(repo: &PathBuf, args: &[&str]) {
+    let output = Command::new("git")
+        .args(args)
+        .current_dir(repo)
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+fn commit(repo: &PathBuf, path: &str, contents: &str) {
+    std::fs::write(repo.join(path), contents).unwrap();
+    git(repo, &["add", path]);
+    git(repo, &["commit", "-m", "update"]);
+}
+
 #[when(expr = "I run intent with {string}")]
 fn run_intent_with(world: &mut CliWorld, arg: String) {
     let output = Command::new(env!("CARGO_BIN_EXE_intent"))

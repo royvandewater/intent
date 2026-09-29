@@ -34,3 +34,34 @@ Feature: Running the intent CLI on a test file
       Calculator
         adds
       """
+
+  Scenario: Diffing only shows changes introduced by this branch
+    Given a git repository whose main branch has "calc.test.ts":
+      """
+      describe('Calculator', () => {
+        it('adds', () => {})
+      })
+      """
+    And this branch changed "calc.test.ts" to:
+      """
+      describe('Calculator', () => {
+        it('adds', () => {})
+        it('subtracts', () => {})
+      })
+      """
+    And main then changed "calc.test.ts" to:
+      """
+      describe('Calculator', () => {
+        it('adds', () => {})
+        it('multiplies', () => {})
+      })
+      """
+    When I run intent with "--diff" in that repository
+    Then it exits successfully
+    And it prints:
+      """
+      calc.test.ts
+        Calculator
+          adds
+      +   subtracts
+      """

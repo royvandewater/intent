@@ -61,10 +61,11 @@ suppressed when the output is piped or when `NO_COLOR` is set.
 intent --diff
 ```
 
-Compares every test file that changed between `main` and `HEAD` (two-dot
-`main..HEAD` — a straight tip-to-tip comparison, not against the merge base)
-and prints how each file's intent changed: titles added on this branch in
-green `+`, titles removed in red `-`, shared titles as plain context.
+Compares every test file that changed on this branch since it diverged from
+`main` (three-dot `main...HEAD`, the same comparison a pull request's "Files
+changed" tab shows) and prints how each file's intent changed: titles added
+on this branch in green `+`, titles removed in red `-`, shared titles as plain
+context. Commits that landed on `main` after the branch point are ignored.
 
 ## Development
 
