@@ -6,6 +6,11 @@ file without the implementation.
 
 ## Installation
 
+Prebuilt binaries for macOS and Linux (arm64 and x86_64) are attached to each
+[GitHub release](https://github.com/royvandewater/intent/releases).
+
+Or build from source:
+
 ```sh
 cargo install --git https://github.com/royvandewater/intent
 ```
