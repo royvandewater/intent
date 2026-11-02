@@ -143,7 +143,7 @@ fn entries(source: &str) -> Vec<Entry> {
         }
 
         let trimmed = line.trim_start();
-        if trimmed.starts_with("#[test]") {
+        if is_test_attribute(trimmed) {
             test_attribute_seen = true;
         } else if let Some(name) = test_attribute_seen
             .then(|| function_name(trimmed))
@@ -216,8 +216,17 @@ fn unescape_unicode(chars: &mut std::str::Chars) -> String {
     }
 }
 
+fn is_test_attribute(trimmed: &str) -> bool {
+    trimmed.strip_prefix("#[").is_some_and(|attribute| {
+        attribute.starts_with("test]") || attribute.starts_with("tokio::test")
+    })
+}
+
 fn function_name(trimmed: &str) -> Option<&str> {
-    let rest = trimmed.strip_prefix("fn ")?;
+    let rest = trimmed
+        .strip_prefix("async ")
+        .unwrap_or(trimmed)
+        .strip_prefix("fn ")?;
     let end = rest.find('(')?;
     Some(&rest[..end])
 }

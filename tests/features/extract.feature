@@ -133,3 +133,15 @@ Feature: Extracting intent from a test file
       """
       adds two numbers
       """
+
+  Scenario: An async tokio test prints its name as words
+    Given the source:
+      """
+      #[tokio::test]
+      async fn adds_two_numbers() {}
+      """
+    When I extract the intent
+    Then the output is:
+      """
+      adds two numbers
+      """
