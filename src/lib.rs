@@ -135,10 +135,32 @@ fn render(entries: &[Entry], style: impl Fn(&str, Block) -> String) -> String {
 fn entries(source: &str) -> Vec<Entry> {
     let mut depth: usize = 0;
     let mut entries: Vec<Entry> = Vec::new();
+    let mut test_attribute_seen = false;
 
     for line in source.lines() {
         if let Some((kind, title)) = block_of_line(line) {
             entries.push(Entry { depth, kind, title });
+        }
+
+        let trimmed = line.trim_start();
+        if let Some(name) = module_name(trimmed) {
+            entries.push(Entry {
+                depth,
+                kind: Block::Describe,
+                title: name.replace('_', " "),
+            });
+        } else if is_test_attribute(trimmed) {
+            test_attribute_seen = true;
+        } else if let Some(name) = test_attribute_seen
+            .then(|| function_name(trimmed))
+            .flatten()
+        {
+            entries.push(Entry {
+                depth,
+                kind: Block::Test,
+                title: name.replace('_', " "),
+            });
+            test_attribute_seen = false;
         }
 
         let opens = line.matches('{').count();
@@ -198,6 +220,27 @@ fn unescape_unicode(chars: &mut std::str::Chars) -> String {
         None if braced => format!("\\u{{{digits}}}"),
         None => format!("\\u{digits}"),
     }
+}
+
+fn is_test_attribute(trimmed: &str) -> bool {
+    trimmed.strip_prefix("#[").is_some_and(|attribute| {
+        attribute.starts_with("test]") || attribute.starts_with("tokio::test")
+    })
+}
+
+fn module_name(trimmed: &str) -> Option<&str> {
+    let rest = trimmed.strip_prefix("mod ")?;
+    let end = rest.find(' ')?;
+    rest[end..].trim().starts_with('{').then_some(&rest[..end])
+}
+
+fn function_name(trimmed: &str) -> Option<&str> {
+    let rest = trimmed
+        .strip_prefix("async ")
+        .unwrap_or(trimmed)
+        .strip_prefix("fn ")?;
+    let end = rest.find('(')?;
+    Some(&rest[..end])
 }
 
 fn block_kind(trimmed: &str) -> Option<Block> {

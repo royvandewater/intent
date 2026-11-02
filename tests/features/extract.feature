@@ -121,3 +121,70 @@ Feature: Extracting intent from a test file
       """
       the query’s organizationId
       """
+
+  Scenario: A Rust test function prints its name as words
+    Given the source:
+      """
+      #[test]
+      fn adds_two_numbers() {}
+      """
+    When I extract the intent
+    Then the output is:
+      """
+      adds two numbers
+      """
+
+  Scenario: An async tokio test prints its name as words
+    Given the source:
+      """
+      #[tokio::test]
+      async fn adds_two_numbers() {}
+      """
+    When I extract the intent
+    Then the output is:
+      """
+      adds two numbers
+      """
+
+  Scenario: Rust functions without a test attribute are ignored
+    Given the source:
+      """
+      fn helper() {}
+
+      #[test]
+      fn adds() {}
+      """
+    When I extract the intent
+    Then the output is:
+      """
+      adds
+      """
+
+  Scenario: A Rust test nested in a mod is indented under it
+    Given the source:
+      """
+      mod logging {
+          fn capture() {}
+
+          #[tokio::test]
+          async fn logs_one_line() {}
+      }
+      """
+    When I extract the intent
+    Then the output is:
+      """
+      logging
+        logs one line
+      """
+
+  Scenario: Colored output styles Rust mods and tests
+    Given the source:
+      """
+      mod logging {
+          #[test]
+          fn logs_one_line() {}
+      }
+      """
+    When I extract the colored intent
+    Then "logging" is shown as a describe block
+    And "logs one line" is shown as a passing test

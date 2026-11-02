@@ -23,7 +23,7 @@ const USAGE: &str = "\
 intent — print the intent of a test file
 
 Usage:
-  intent <test-file>    Print the describe/it/test titles in the file
+  intent <test-file>    Print the test titles in a vitest or Rust test file
   intent --diff [files] Diff the intent of test files changed on this branch since main,
                         limited to [files] when given
   intent --help         Show this help";
