@@ -1,8 +1,9 @@
 # intent
 
-Parses a vitest test file and prints the contents of all the `describe` & `it`
-blocks — like a Cucumber feature — so you can read the intent of every test in a
-file without the implementation.
+Parses a vitest or Rust test file and prints the contents of all the
+`describe` & `it` blocks (or `mod`s & `#[test]` functions) — like a Cucumber
+feature — so you can read the intent of every test in a file without the
+implementation.
 
 ## Installation
 
@@ -55,6 +56,24 @@ Calculator
 Recognizes `describe`, `it`, and `test` blocks (including modifiers like
 `.skip` / `.only`), with single-quoted, double-quoted, and backtick titles.
 Nesting is reflected by indentation.
+
+Rust test files work too. Functions annotated with `#[test]` or
+`#[tokio::test]` print as titles with underscores rendered as spaces, and
+`mod` blocks nest like `describe`:
+
+```rust
+mod logging {
+    #[tokio::test]
+    async fn a_forwarded_request_logs_one_line() {}
+}
+```
+
+prints:
+
+```
+logging
+  a forwarded request logs one line
+```
 
 Output is colored when writing to a terminal — `describe` containers in bold
 and `it`/`test` leaves in green, following Cucumber's scheme. Colors are

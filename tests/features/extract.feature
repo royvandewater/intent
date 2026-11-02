@@ -176,3 +176,15 @@ Feature: Extracting intent from a test file
       logging
         logs one line
       """
+
+  Scenario: Colored output styles Rust mods and tests
+    Given the source:
+      """
+      mod logging {
+          #[test]
+          fn logs_one_line() {}
+      }
+      """
+    When I extract the colored intent
+    Then "logging" is shown as a describe block
+    And "logs one line" is shown as a passing test
