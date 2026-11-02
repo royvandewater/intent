@@ -121,3 +121,15 @@ Feature: Extracting intent from a test file
       """
       the query’s organizationId
       """
+
+  Scenario: A Rust test function prints its name as words
+    Given the source:
+      """
+      #[test]
+      fn adds_two_numbers() {}
+      """
+    When I extract the intent
+    Then the output is:
+      """
+      adds two numbers
+      """
