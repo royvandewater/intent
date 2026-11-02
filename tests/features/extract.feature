@@ -145,3 +145,34 @@ Feature: Extracting intent from a test file
       """
       adds two numbers
       """
+
+  Scenario: Rust functions without a test attribute are ignored
+    Given the source:
+      """
+      fn helper() {}
+
+      #[test]
+      fn adds() {}
+      """
+    When I extract the intent
+    Then the output is:
+      """
+      adds
+      """
+
+  Scenario: A Rust test nested in a mod is indented under it
+    Given the source:
+      """
+      mod logging {
+          fn capture() {}
+
+          #[tokio::test]
+          async fn logs_one_line() {}
+      }
+      """
+    When I extract the intent
+    Then the output is:
+      """
+      logging
+        logs one line
+      """

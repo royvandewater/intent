@@ -143,7 +143,13 @@ fn entries(source: &str) -> Vec<Entry> {
         }
 
         let trimmed = line.trim_start();
-        if is_test_attribute(trimmed) {
+        if let Some(name) = module_name(trimmed) {
+            entries.push(Entry {
+                depth,
+                kind: Block::Describe,
+                title: name.replace('_', " "),
+            });
+        } else if is_test_attribute(trimmed) {
             test_attribute_seen = true;
         } else if let Some(name) = test_attribute_seen
             .then(|| function_name(trimmed))
@@ -220,6 +226,12 @@ fn is_test_attribute(trimmed: &str) -> bool {
     trimmed.strip_prefix("#[").is_some_and(|attribute| {
         attribute.starts_with("test]") || attribute.starts_with("tokio::test")
     })
+}
+
+fn module_name(trimmed: &str) -> Option<&str> {
+    let rest = trimmed.strip_prefix("mod ")?;
+    let end = rest.find(' ')?;
+    rest[end..].trim().starts_with('{').then_some(&rest[..end])
 }
 
 fn function_name(trimmed: &str) -> Option<&str> {
